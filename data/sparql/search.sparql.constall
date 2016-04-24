@@ -1,0 +1,5 @@
+CONSTRUCT { ?s ?p ?o1 . } WHERE {
+  ?s <http://schema.org/name> ?o .
+  ?s ?p ?o1.
+  FILTER regex(str(?o), "(.*)%searchstring%(.*)", "ism")
+}

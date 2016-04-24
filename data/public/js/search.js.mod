@@ -129,7 +129,6 @@ var ResultTable = React.createClass({
           url: url,
           headers: {Accept: 'application/ld+json'},
           success: function (data) {
-            data = findData(data);
             jsonld.promises().compact(data, context)
               .then(function (data) {
                 var details = self.state.details;
@@ -233,47 +232,30 @@ var ResultTable = React.createClass({
       return details[property];
     };
 
-    var e2Name = function (obj) {
-      var ret = [];
-      if (Array.isArray(obj.name)) {
-        ret = obj.name.map(function (o) {
-          return o['@value'];
-        });
-      } else if (Array.isArray(obj['http://schema.org/name'])) {
-        ret = obj['http://schema.org/name'].map(function (o) {
-          return o['@value'];
-        });
-      } else if (typeof obj.name === 'object') {
-        ret = [obj.name['@value']];
-      } else if (typeof obj.name === 'string') {
-        ret = [obj.name];
-      }
-      return ret.filter(function (n) {
-        return $.trim(n).length > 0;
-      });
-    };
+    var key = 0;
 
     var rows = self.state.data.map(function (row, index) {
-      var names = e2Name(row);
-      var splat = row['@id'].split('/');
-      var id = splat[splat.length - 1];
-      return React.DOM.tr({key: row['@id']},
-        React.DOM.td({}, self.state.page*self.props.resultsPerPage + index + 1),
-        React.DOM.td({},
-          React.DOM.ul({}, names.map(function (name) {
-            return React.DOM.li({}, name);
-          }))),
-        React.DOM.td({},
-          React.DOM.a({href: row['@id']}, id))
+      rowXs = Object.keys(row).map(function (key) {
+        return [key, row[key]];
+      });
+      var trs = React.DOM.tr({key: key++, href: row['@id']},
+        React.DOM.td({key: key++},
+          rowXs.map(function(col, j) {
+            return React.DOM.tr({key: key++},
+              React.DOM.td({key: key++}, col[0]),
+              React.DOM.td({key: key++}, col[1])
+            );
+          })
+        )
       );
+      return trs;
     });
 
     var table = React.DOM.table({className: 'table table-bordered', id: 'results-table'},
       React.DOM.thead({},
         React.DOM.tr({},
-          React.DOM.th({className: 'col-xs-1'}, 'No.'),
-          React.DOM.th({className: 'col-xs-9'}, 'Name'),
-          React.DOM.th({className: 'col-xs-2'}, 'Resource')
+          React.DOM.th({className: 'col-xs-4'}, 'x'),
+          React.DOM.th({className: 'col-xs-8'}, 'y')
         )),
       React.DOM.tbody({}, rows));
 

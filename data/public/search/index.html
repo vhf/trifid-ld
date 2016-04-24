@@ -10,7 +10,10 @@
 			<div class="collapse navbar-collapse">
 				<div class="navbar-form navbar-left" role="search">
 					<div class="form-group">
-						<input id="search-string" type="text" class="form-control" placeholder="Search" autofocus>
+            <div class="input-group">
+              <span class="input-group-addon" id="basic-addon1">E</span>
+              <input id="search-string" type="text" class="form-control" placeholder="42" autofocus aria-describedby="basic-addon1">
+            </div>
 					</div>
 
 					<button id="search" class="btn btn-default">Submit</button>
@@ -32,7 +35,7 @@
 
 	<script src="/js/jquery.js"></script>
 	<script src="/js/bootstrap.js"></script>
-	<script src="/js/jsonld.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/jsonld/0.3.15/jsonld.js"></script>
 	<script src="/js/react.js"></script>
 	<script src="/js/search.js"></script>
 	<script>

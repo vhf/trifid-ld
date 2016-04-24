@@ -2,54 +2,22 @@
 
 'use strict';
 
-
-global.rdf = require('rdf-ext')(rdf);
-
-
 var
   fs = require('fs'),
-  graphSplit = require('./lib/graph-split')(rdf),
-  url = require('url');
+  path = require('path');
 
 
-var init = function () {
-  var config = this;
+var endpointUrl = 'http://localhost:8890/sparql';
+var port = 8888;
 
-  var importGraph = function (filename) {
-    return new Promise(function (resolve) {
-      rdf.parseTurtle(fs.readFileSync(filename).toString(), function (graph) {
-        resolve(graph);
-      });
-    });
-  };
+var buildQuery = function (iri) {
+  iri = iri.replace(':' + port, '');
+  return 'CONSTRUCT {<' + iri + '> ?p ?o} WHERE {<' + iri + '> ?p ?o}';
+};
 
-  return Promise.all([
-    importGraph('./node_modules/tbbt-ld/dist/tbbt.nt')
-  ]).then(function (graphs) {
-    var
-      mergedGraph = rdf.createGraph(),
-      searchNs = 'http://localhost:8080',
-      replaceNs = url.format({
-        protocol: 'http:',
-        hostname: config.hostname,
-        port: config.port || '',
-        pathname: config.path || ''
-      });
-
-    graphs.forEach(function (graph) {
-      // map namespace to listener config
-      graph = rdf.utils.mapNamespaceGraph(graph, searchNs, replaceNs);
-
-      mergedGraph.addAll(graph);
-    });
-
-    config.handlerOptions.storeOptions = {
-      graph: mergedGraph,
-      split: rdf.utils.splitGraphByNamedNodeSubject
-    };
-
-    return Promise.resolve();
-  });
+var buildExistsQuery = function (iri) {
+  iri = iri.replace(':' + port, '');
+  return 'ASK { GRAPH ?g { <' + iri + '> ?p ?o }}';
 };
 
 var patchResponseHeaders = function (res, headers) {
@@ -89,17 +57,14 @@ var patchResponseHeaders = function (res, headers) {
 
 module.exports = {
   app: 'trifid-ld',
+  hostname: 'voldemort.exascale.info',
+  port: '',
   logger: {
     level: 'debug'
   },
-  // public interface visible after any reverse proxies
-  hostname: 'localhost',
-  port: 8080,
-  path: '',
-  // listener
   listener: {
-    hostname: '',
-    port: 8080
+    hostname: 'localhost',
+    port: port
   },
   expressSettings: {
     'trust proxy': 'loopback',
@@ -108,10 +73,31 @@ module.exports = {
   patchHeaders: {
     patchResponse: patchResponseHeaders
   },
-  init: init,
-  HandlerClass: require('./lib/ldp-module-handler'),
+  sparqlProxy: {
+    path: '/sparql',
+    options: {
+      endpointUrl: endpointUrl
+    }
+  },
+  sparqlSearch: {
+    path: '/query',
+    options: {
+      endpointUrl: endpointUrl,
+      resultsPerPage: 10,
+      queryTemplate: fs.readFileSync(path.join(__dirname, 'data/sparql/search.sparql')).toString(),
+      variables: {
+        'q': {
+          variable: '%searchstring%',
+          type: 'Raw', // can be Literal, NamedNode or Raw. Defaults to Literal
+          required: true
+        }
+      }
+    }
+  },
+  HandlerClass: require('./lib/sparql-handler'),
   handlerOptions: {
-    rdf: rdf,
-    StoreClass: graphSplit.SplitStore
+    endpointUrl: endpointUrl,
+    buildQuery: buildQuery,
+    buildExistsQuery: buildExistsQuery
   }
 };
