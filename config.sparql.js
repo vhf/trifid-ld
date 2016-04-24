@@ -50,13 +50,16 @@ var patchResponseHeaders = function (res, headers) {
   return headers;
 };
 
+var endpointUrl = 'http://localhost:3030/tbbt/sparql';
+var port = 8080;
+
 module.exports = {
   app: 'trifid-ld',
   logger: {
     level: 'debug'
   },
   listener: {
-    port: 8080
+    port: port
   },
   expressSettings: {
     'trust proxy': 'loopback',
@@ -68,18 +71,19 @@ module.exports = {
   sparqlProxy: {
     path: '/sparql',
     options: {
-      endpointUrl:'http://localhost:3030/tbbt/sparql'
+      endpointUrl: endpointUrl
     }
   },
   sparqlSearch: {
     path: '/query',
     options: {
-      endpointUrl:'http://localhost:3030/tbbt/sparql',
+      endpointUrl: endpointUrl,
       resultsPerPage: 5,
       queryTemplate: fs.readFileSync(path.join(__dirname, 'data/sparql/search.sparql')).toString(),
       variables: {
         'q': {
           variable: '%searchstring%',
+          type: 'Literal', // can be Literal, NamedNode or Raw. Defaults to Literal
           required: true
         }
       }
@@ -87,7 +91,7 @@ module.exports = {
   },
   HandlerClass: require('./lib/sparql-handler'),
   handlerOptions: {
-    endpointUrl: 'http://localhost:3030/tbbt/sparql',
+    endpointUrl: endpointUrl,
     buildQuery: buildQuery,
     buildExistsQuery: buildExistsQuery
   }
